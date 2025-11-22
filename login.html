@@ -1,0 +1,65 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UCU-BBUC Chatbot — Login</title>
+  <style>
+    :root{--accent:#0b6efd;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Arial;margin:0;background:#f3f4f6;display:flex;align-items:center;justify-content:center;height:100vh}
+    .card{width:360px;background:white;border-radius:12px;box-shadow:0 6px 20px rgba(2,6,23,0.08);padding:24px}
+    h1{margin:0 0 8px;font-size:20px}
+    p.sub{margin:0 0 18px;color:var(--muted);font-size:13px}
+    label{display:block;font-size:13px;margin-top:10px}
+    input{width:100%;padding:10px 12px;margin-top:6px;border:1px solid #e6e6e6;border-radius:8px}
+    .btn{display:inline-block;width:100%;padding:10px;border-radius:10px;background:var(--accent);color:white;border:0;margin-top:16px;cursor:pointer}
+    .link{display:block;text-align:center;margin-top:12px;color:var(--accent);text-decoration:none}
+    .small{font-size:12px;color:var(--muted);text-align:center;margin-top:10px}
+    .error{color:#b91c1c;font-size:13px;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>UCU - BBUC Chatbot</h1>
+    <p class="sub">Sign in to access the student support chatbot and your dashboard.</p>
+
+    <form id="loginForm">
+      <label for="email">Email</label>
+      <input id="email" type="email" required />
+
+      <label for="password">Password</label>
+      <input id="password" type="password" required />
+
+      <div id="error" class="error" style="display:none"></div>
+
+      <button class="btn" type="submit">Sign in</button>
+    </form>
+
+    <div class="small">Don't have an account? <a href="register.html">Create one</a></div>
+  </div>
+
+  <script>
+    // Simple client-side auth (demo only). In production use a secure backend.
+    const form = document.getElementById('loginForm');
+    const err = document.getElementById('error');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      err.style.display = 'none';
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const password = document.getElementById('password').value;
+
+      const users = JSON.parse(localStorage.getItem('ucub_bduc_users') || '[]');
+      const user = users.find(u => u.email === email && u.password === password);
+      if (!user) {
+        err.textContent = 'Invalid email or password.';
+        err.style.display = 'block';
+        return;
+      }
+
+      localStorage.setItem('ucub_currentUser', JSON.stringify({name:user.name,email:user.email}));
+      window.location.href = 'dashboard.html';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UCU-BBUC Chatbot — Dashboard</title>
+  <style>
+    :root{--accent:#0b6efd;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Arial;margin:0;background:#f8fafc;color:#0f172a}
+    header{background:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(2,6,23,0.04)}
+    header h2{margin:0;font-size:16px}
+    .container{display:grid;grid-template-columns:260px 1fr;gap:20px;padding:20px}
+    .card{background:white;border-radius:12px;padding:16px;box-shadow:0 6px 20px rgba(2,6,23,0.04)}
+    .sidebar nav a{display:block;padding:10px;border-radius:8px;color:var(--muted);text-decoration:none;margin-bottom:6px}
+    .sidebar nav a.active{background:#eef2ff;color:var(--accent)}
+    .profile{display:flex;align-items:center;gap:12px}
+    .avatar{width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#c7d2fe,#e0f2fe);display:flex;align-items:center;justify-content:center;font-weight:600}
+
+    /* chat area */
+    .chat-wrapper{display:flex;flex-direction:column;height:66vh}
+    .messages{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+    .bubble{max-width:70%;padding:10px 12px;border-radius:12px}
+    .me{align-self:flex-end;background:#0b6efd;color:white;border-bottom-right-radius:4px}
+    .bot{align-self:flex-start;background:#f1f5f9;color:#0b1724;border-bottom-left-radius:4px}
+    .compose{display:flex;gap:8px;padding:12px;border-top:1px solid #eef2ff}
+    .compose input{flex:1;padding:10px;border-radius:10px;border:1px solid #e6e6e6}
+    .compose button{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:white}
+
+    .meta{color:var(--muted);font-size:13px;margin-bottom:8px}
+  </style>
+</head>
+<body>
+  <header>
+    <h2>UCU - BBUC Student Chatbot</h2>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="userName" style="color:var(--muted)"></div>
+      <button id="logoutBtn" style="padding:8px 10px;border-radius:8px;border:1px solid #e6e6e6;background:white;cursor:pointer">Logout</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <aside class="sidebar card">
+      <div class="profile" style="margin-bottom:12px">
+        <div class="avatar" id="avatar">U</div>
+        <div>
+          <div id="nameTitle" style="font-weight:600"></div>
+          <div style="font-size:12px;color:var(--muted)" id="emailTitle"></div>
+        </div>
+      </div>
+
+      <nav>
+        <a href="#" class="active">Chatbot</a>
+        <a href="#">My Tickets</a>
+        <a href="#">Resources</a>
+        <a href="#">Settings</a>
+      </nav>
+    </aside>
+
+    <main>
+      <div class="card chat-wrapper" id="chatCard">
+        <div class="meta">Welcome to the UCU-BBUC student support chatbot. Ask about registration, timetables, campus services, or report an issue.</div>
+        <div class="messages" id="messages" aria-live="polite"></div>
+
+        <form class="compose" id="compose">
+          <input id="msgInput" placeholder="Type your message... e.g. 'How do I register for semester 2?'" autocomplete="off" />
+          <button type="submit">Send</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Dashboard auth guard
+    const current = JSON.parse(localStorage.getItem('ucub_currentUser') || 'null');
+    if (!current) {
+      window.location.href = 'login.html';
+    }
+
+    document.getElementById('userName').textContent = current ? current.name : '';
+    document.getElementById('nameTitle').textContent = current ? current.name : '';
+    document.getElementById('emailTitle').textContent = current ? current.email : '';
+    document.getElementById('avatar').textContent = current && current.name ? current.name.split(' ').map(s=>s[0]).slice(0,2).join('') : 'U';
+
+    document.getElementById('logoutBtn').addEventListener('click', ()=>{
+      localStorage.removeItem('ucub_currentUser');
+      window.location.href = 'login.html';
+    });
+
+    // Simple chat behaviour (demo): local rule-based answers + echo fallback
+    const messagesEl = document.getElementById('messages');
+    const compose = document.getElementById('compose');
+    const input = document.getElementById('msgInput');
+
+    function appendBubble(text, who='bot'){
+      const div = document.createElement('div');
+      div.className = 'bubble ' + (who==='me' ? 'me' : 'bot');
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // Seed message
+    setTimeout(()=>appendBubble('Hello! I am the UCU-BBUC student assistant. How can I help you today?'), 300);
+
+    compose.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const text = input.value.trim();
+      if(!text) return;
+      appendBubble(text,'me');
+      input.value = '';
+
+      // quick rule-based responses
+      const q = text.toLowerCase();
+      setTimeout(()=>{
+        if (q.includes('register') || q.includes('registration')){
+          appendBubble('To register for a semester: 1) Login to your student portal, 2) Go to Registration > Courses, 3) Select courses and submit. Contact the registrar for assistance: registrar@ucu.ac.ug');
+        } else if (q.includes('timetable') || q.includes('schedule')){
+          appendBubble('Timetables are published on the student portal and noticeboards. Which program and year are you in?');
+        } else if (q.includes('library')){
+          appendBubble('The library is open Mon–Fri 8:00–17:00. You can search the catalogue on the library website or visit the library desk.');
+        } else if (q.includes('fee') || q.includes('tuition')){
+          appendBubble('For fees and payments check the Finance Office page or contact finance@ucu.ac.ug. Would you like the payment steps?');
+        } else {
+          // fallback echo + simple canned answer
+          appendBubble('Thanks — I received that. For a quick answer: please check the student portal or ask me specifics (e.g., "How to apply for leave?"). If you want, I can create a ticket for this issue.');
+        }
+      }, 600);
+    });
+  </script>
+</body>
+</html>
